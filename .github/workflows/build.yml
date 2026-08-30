@@ -62,6 +62,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts/
+          merge-multiple: false
+
+      - name: List downloaded files
+        run: find artifacts/ -type f
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -82,8 +86,5 @@ jobs:
             - Verifica integridade dos ficheiros após cópia (xxHash)
             
             Desenvolvido por Jorge A. Silva
-          files: |
-            artifacts/PenCopy-Windows/*
-            artifacts/PenCopy-macOS/*
-            artifacts/PenCopy-Linux/*
+          files: artifacts/**/*
           draft: false
