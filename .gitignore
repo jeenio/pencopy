@@ -1,0 +1,21 @@
+# Build artifacts
+dist/
+build/
+_build/
+*.spec
+*.exe
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Config (gerado pelo utilizador)
+config.json
+
+# IDE
+.vscode/
+.idea/
+*.swp

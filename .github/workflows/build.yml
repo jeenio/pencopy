@@ -1,0 +1,89 @@
+name: Build PenCopy
+
+on:
+  push:
+    tags:
+      - 'v*'  # Dispara quando se cria uma tag como v1.0.0
+  workflow_dispatch:  # Permite correr manualmente no GitHub
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: PenCopy-Windows
+            exe_name: PenCopy.exe
+            pyinstaller_args: --uac-admin
+          - os: macos-latest
+            artifact: PenCopy-macOS
+            exe_name: PenCopy
+            pyinstaller_args: ""
+          - os: ubuntu-latest
+            artifact: PenCopy-Linux
+            exe_name: pencopy
+            pyinstaller_args: ""
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PySide6 xxhash psutil pyinstaller
+
+      - name: Build executable
+        run: |
+          pyinstaller --onefile --windowed --name ${{ matrix.exe_name }} --clean ${{ matrix.pyinstaller_args }} pencopy.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.exe_name }}*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: PenCopy ${{ github.ref_name }}
+          body: |
+            ## PenCopy ${{ github.ref_name }}
+            
+            Descarregue o ficheiro para o seu sistema operativo:
+            - **Windows**: `PenCopy.exe` — duplo-clique para abrir
+            - **macOS**: `PenCopy` — abrir com duplo-clique (pode pedir permissão em Preferências → Segurança)
+            - **Linux**: `pencopy` — executar com `sudo ./pencopy`
+            
+            ### Notas
+            - Não precisa de instalação
+            - Formata pendrives em exFAT (compatível com todos os sistemas)
+            - Verifica bad sectors antes da cópia
+            - Verifica integridade dos ficheiros após cópia (xxHash)
+            
+            Desenvolvido por Jorge A. Silva
+          files: |
+            artifacts/PenCopy-Windows/*
+            artifacts/PenCopy-macOS/*
+            artifacts/PenCopy-Linux/*
+          draft: false
