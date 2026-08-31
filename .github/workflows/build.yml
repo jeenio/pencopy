@@ -62,29 +62,36 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts/
-          merge-multiple: false
 
-      - name: List downloaded files
-        run: find artifacts/ -type f
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          cp artifacts/PenCopy-Windows/PenCopy.exe release/PenCopy.exe
+          cp artifacts/PenCopy-macOS/PenCopy release/PenCopy-macOS
+          cp artifacts/PenCopy-Linux/pencopy release/pencopy-linux
+          ls -la release/
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: PenCopy ${{ github.ref_name }}
-          body: |
-            ## PenCopy ${{ github.ref_name }}
-            
-            Descarregue o ficheiro para o seu sistema operativo:
-            - **Windows**: `PenCopy.exe` — duplo-clique para abrir
-            - **macOS**: `PenCopy` — abrir com duplo-clique (pode pedir permissão em Preferências → Segurança)
-            - **Linux**: `pencopy` — executar com `sudo ./pencopy`
-            
-            ### Notas
-            - Não precisa de instalação
-            - Formata pendrives em exFAT (compatível com todos os sistemas)
-            - Verifica bad sectors antes da cópia
-            - Verifica integridade dos ficheiros após cópia (xxHash)
-            
-            Desenvolvido por Jorge A. Silva
-          files: artifacts/**/*
-          draft: false
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title "PenCopy ${{ github.ref_name }}" \
+            --notes "## PenCopy ${{ github.ref_name }}
+
+          Descarregue o ficheiro para o seu sistema operativo:
+          - **Windows**: PenCopy.exe — duplo-clique para abrir
+          - **macOS**: PenCopy-macOS — abrir com duplo-clique
+          - **Linux**: pencopy-linux — executar com sudo ./pencopy-linux
+
+          ### Notas
+          - Não precisa de instalação
+          - Formata pendrives em exFAT
+          - Verifica bad sectors antes da cópia
+          - Verifica integridade dos ficheiros (xxHash)
+
+          Desenvolvido por Jorge A. Silva" \
+            release/PenCopy.exe \
+            release/PenCopy-macOS \
+            release/pencopy-linux
